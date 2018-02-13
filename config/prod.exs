@@ -19,3 +19,13 @@ config :cartographer, Cartographer.Endpoint,
 
 # Do not print debug messages in production
 config :logger, level: :info
+
+# Proxy layer + mongo
+config :cartographer,
+  proxy_base_url: "${PROXY_BASE_URL}",
+  proxy_secret: "${PROXY_SECRET}"
+
+config :actionkit,
+  base: "${AK_BASE}",
+  username: "${AK_USERNAME}",
+  password: "${AK_PASSWORD}"
