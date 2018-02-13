@@ -42,7 +42,8 @@ defmodule Cartographer.Mixfile do
       {:httpotion, "~> 3.1.0"},
       {:cosmic, git: "https://github.com/justicedemocrats/cosmic_ex.git"},
       {:quantum, ">= 2.2.2"},
-      {:timex, "~> 3.0"}
+      {:timex, "~> 3.0"},
+      {:distillery, "~> 1.0.0"}
     ]
   end
 end
