@@ -90,15 +90,28 @@ defmodule Jobs.ProcessNewEvents do
     param
   end
 
-  def auto_publish(params = %{"event" => ~m(id)}) do
+  def auto_publish(params = %{"event" => ak_event = ~m(id)}) do
     %{body: event} = AkProxy.get("events/#{id}")
 
-    if Enum.member?(event.tags, "Source: Direct Publish") do
-      AkProxy.post("events/#{id}", body: %{"status" => "confirmed"})
+    tags =
+      case event.tags do
+        [] -> get_event_tags(ak_event)
+        more_things -> more_things
+      end
+
+    if Enum.member?(tags, "Source: Direct Publish") do
+      AkProxy.post("events/#{id}", body: %{"status" => "confirmed", "tags" => tags})
     end
 
     event = Ak.Api.get("event/#{id}").body
     Map.put(params, "event", event)
+  end
+
+  def get_event_tags(~m(fields)) do
+    case Enum.filter(fields, fn f -> f["name"] == "event_tags" end) |> List.first() do
+      ~m(value) -> Poison.decode!(value)
+      nil -> []
+    end
   end
 
   def send_out(:error) do
@@ -109,6 +122,7 @@ defmodule Jobs.ProcessNewEvents do
     %{"metadata" => ~m(turnout_request)} = Cosmic.get("jd-esm-config")
     %{body: event} = AkProxy.get("events/#{event_id}")
     body = Poison.encode!(~m(survey event))
+    IO.puts(body)
     IO.inspect(HTTPotion.post(turnout_request, body: body))
   end
 
