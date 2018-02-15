@@ -58,6 +58,11 @@ config :actionkit,
   username: System.get_env("AK_USERNAME"),
   password: System.get_env("AK_PASSWORD")
 
+config :cartographer,
+  airtable_key: System.get_env("AIRTABLE_KEY"),
+  airtable_base: System.get_env("AIRTABLE_BASE"),
+  airtable_table_name: System.get_env("AIRTABLE_TABLE_NAME")
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

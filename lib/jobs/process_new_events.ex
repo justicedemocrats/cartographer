@@ -2,7 +2,7 @@ defmodule Jobs.ProcessNewEvents do
   import ShortMaps
   require Logger
 
-  @interval [minutes: -5]
+  @interval [minutes: -30]
   @turnout_survey_page 858
 
   def go do
@@ -49,6 +49,7 @@ defmodule Jobs.ProcessNewEvents do
     |> ensure_attributes()
     |> add_local_organizer_tag()
     |> auto_publish()
+    |> send_out_if_volunteer()
   end
 
   def ensure_attributes(%{"event" => ~m(creator id)}) do
@@ -99,12 +100,35 @@ defmodule Jobs.ProcessNewEvents do
         more_things -> more_things
       end
 
-    if Enum.member?(tags, "Source: Direct Publish") do
-      AkProxy.post("events/#{id}", body: %{"status" => "confirmed", "tags" => tags})
-    end
+    body =
+      if Enum.member?(tags, "Source: Direct Publish") do
+        Logger.info("Auto publishing #{id}")
+        status = "confirmed"
+        ~m(status tags)
+      else
+        Logger.info("#{id} is a vol event")
+        status = "tentative"
+        ~m(status tags)
+      end
 
+    AkProxy.post("events/#{id}", body: body)
     event = Ak.Api.get("event/#{id}").body
     Map.put(params, "event", event)
+  end
+
+  # Vol event
+  def send_out_if_volunteer(params = %{"event" => %{"is_approved" => false, "id" => id}}) do
+    %{body: osdi_format} = AkProxy.get("events/#{id}")
+    %{"metadata" => ~m(vol_event_submission)} = Cosmic.get("jd-esm-config")
+    body = Poison.encode!(osdi_format)
+
+    Logger.info("Sending out volunteer event hook for #{id}")
+    HTTPotion.post(vol_event_submission, body: body)
+    params
+  end
+
+  def send_out_if_volunteer(params) do
+    params
   end
 
   def get_event_tags(~m(fields)) do

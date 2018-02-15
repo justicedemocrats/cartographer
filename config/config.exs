@@ -21,7 +21,8 @@ config :cosmic, slug: "brand-new-congress"
 
 config :cartographer, Cartographer.Scheduler,
   jobs: [
-    {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}}
+    {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
+    {"*/5 * * * *", {Cartographer.Airtable, :update, []}}
   ]
 
 # Import environment specific config. This must remain at the bottom

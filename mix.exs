@@ -40,10 +40,13 @@ defmodule Cartographer.Mixfile do
       {:cowboy, "~> 1.0"},
       {:actionkit, git: "https://github.com/justicedemocrats/actionkit_ex.git"},
       {:httpotion, "~> 3.1.0"},
+      {:tesla, "~> 0.10.0"},
       {:cosmic, git: "https://github.com/justicedemocrats/cosmic_ex.git"},
       {:quantum, ">= 2.2.2"},
       {:timex, "~> 3.0"},
-      {:distillery, "~> 1.0.0"}
+      {:distillery, "~> 1.0.0"},
+      {:ex_json_schema, "~> 0.5.4"},
+      {:airtable_config, git: "https://github.com/justicedemocrats/airtable_config.git"}
     ]
   end
 end

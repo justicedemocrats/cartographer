@@ -25,6 +25,11 @@ config :cartographer,
   proxy_base_url: "${PROXY_BASE_URL}",
   proxy_secret: "${PROXY_SECRET}"
 
+config :cartographer,
+  airtable_key: "${AIRTABLE_KEY}",
+  airtable_base: "${AIRTABLE_BASE}",
+  airtable_table_name: "${AIRTABLE_TABLE_NAME}"
+
 config :actionkit,
   base: "${AK_BASE}",
   username: "${AK_USERNAME}",
