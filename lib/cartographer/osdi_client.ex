@@ -1,10 +1,6 @@
-defmodule OsdiProxy do
+defmodule OsdiClient do
   use Tesla
   import ShortMaps
-
-  plug(Tesla.Middleware.BaseUrl, "https://api.github.com")
-  plug(Tesla.Middleware.Headers, %{"Authorization" => "token xyz"})
-  plug(Tesla.Middleware.JSON)
 
   def build_client(base, osdi_api_token) do
     Tesla.build_client([

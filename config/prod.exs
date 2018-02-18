@@ -22,8 +22,8 @@ config :logger, level: :info
 
 # Proxy layer + mongo
 config :cartographer,
-  proxy_base_url: "${PROXY_BASE_URL}",
-  proxy_secret: "${PROXY_SECRET}"
+  osdi_base_url: "${OSDI_BASE_URL}",
+  osdi_api_token: "${OSDI_API_TOKEN}"
 
 config :cartographer,
   airtable_key: "${AIRTABLE_KEY}",
@@ -34,3 +34,9 @@ config :actionkit,
   base: "${AK_BASE}",
   username: "${AK_USERNAME}",
   password: "${AK_PASSWORD}"
+
+config :cartographer, Cartographer.Scheduler,
+  jobs: [
+    {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
+    {"*/5 * * * *", {Cartographer.Airtable, :update, []}}
+  ]

@@ -50,8 +50,8 @@ config :logger, :console, format: "[$level] $message\n"
 
 # Proxy layer + mongo
 config :cartographer,
-  proxy_base_url: System.get_env("PROXY_BASE_URL"),
-  proxy_secret: System.get_env("PROXY_SECRET")
+  osdi_base_url: System.get_env("OSDI_BASE_URL"),
+  osdi_api_token: System.get_env("OSDI_API_TOKEN")
 
 config :actionkit,
   base: System.get_env("AK_BASE"),

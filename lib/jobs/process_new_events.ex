@@ -2,7 +2,7 @@ defmodule Jobs.ProcessNewEvents do
   import ShortMaps
   require Logger
 
-  @interval [minutes: -30]
+  @interval [minutes: -240]
   @turnout_survey_page 858
 
   def go do
@@ -49,7 +49,8 @@ defmodule Jobs.ProcessNewEvents do
     |> ensure_attributes()
     |> add_local_organizer_tag()
     |> auto_publish()
-    |> send_out_if_volunteer()
+
+    # |> send_out_if_volunteer()
   end
 
   def ensure_attributes(%{"event" => ~m(creator id)}) do
@@ -100,15 +101,21 @@ defmodule Jobs.ProcessNewEvents do
         more_things -> more_things
       end
 
+    type =
+      case event.type do
+        "Unknown" -> get_event_type(ak_event)
+        type -> type
+      end
+
     body =
       if Enum.member?(tags, "Source: Direct Publish") do
         Logger.info("Auto publishing #{id}")
         status = "confirmed"
-        ~m(status tags)
+        ~m(status tags type)
       else
         Logger.info("#{id} is a vol event")
         status = "tentative"
-        ~m(status tags)
+        ~m(status tags type)
       end
 
     AkProxy.post("events/#{id}", body: body)
@@ -116,7 +123,7 @@ defmodule Jobs.ProcessNewEvents do
     Map.put(params, "event", event)
   end
 
-  # Vol event
+  # CURRENTLY UNSUED
   def send_out_if_volunteer(params = %{"event" => %{"is_approved" => false, "id" => id}}) do
     %{body: osdi_format} = AkProxy.get("events/#{id}")
     %{"metadata" => ~m(vol_event_submission)} = Cosmic.get("jd-esm-config")
@@ -134,6 +141,13 @@ defmodule Jobs.ProcessNewEvents do
   def get_event_tags(~m(fields)) do
     case Enum.filter(fields, fn f -> f["name"] == "event_tags" end) |> List.first() do
       ~m(value) -> Poison.decode!(value)
+      nil -> "Unknown"
+    end
+  end
+
+  def get_event_type(~m(fields)) do
+    case Enum.filter(fields, fn f -> f["name"] == "event_type" end) |> List.first() do
+      ~m(value) -> value
       nil -> []
     end
   end
@@ -146,7 +160,6 @@ defmodule Jobs.ProcessNewEvents do
     %{"metadata" => ~m(turnout_request)} = Cosmic.get("jd-esm-config")
     %{body: event} = AkProxy.get("events/#{event_id}")
     body = Poison.encode!(~m(survey event))
-    IO.puts(body)
     IO.inspect(HTTPotion.post(turnout_request, body: body))
   end
 

@@ -1,21 +1,15 @@
 defmodule AkProxy do
   use HTTPotion.Base
 
-  def base, do: Application.get_env(:cartographer, :proxy_base_url)
-  def secret, do: Application.get_env(:cartographer, :proxy_secret)
+  def base, do: Application.get_env(:cartographer, :osdi_base_url)
+  def secret, do: Application.get_env(:cartographer, :osdi_api_token)
 
   def process_url(url) do
     "#{base()}/#{url}"
   end
 
   def process_options(opts) do
-    query =
-      Keyword.get(opts, :query, %{})
-      |> Map.put(:secret, secret())
-
-    opts
-    |> Keyword.put(:query, query)
-    |> Keyword.put(:timeout, 60_000)
+    Keyword.put(opts, :timeout, 60_000)
   end
 
   def process_request_body(map) when is_map(map) do
@@ -27,7 +21,12 @@ defmodule AkProxy do
   end
 
   defp process_request_headers(hdrs) do
-    Enum.into(hdrs, Accept: "application/json", "Content-Type": "application/json")
+    Enum.into(
+      hdrs,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "OSDI-API-Token": secret()
+    )
   end
 
   defp process_response_body(raw) do
