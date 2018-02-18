@@ -2,7 +2,7 @@ defmodule Jobs.ProcessNewEvents do
   import ShortMaps
   require Logger
 
-  @interval [minutes: -1440]
+  @interval [minutes: -5]
   @turnout_survey_page 858
 
   def go do
