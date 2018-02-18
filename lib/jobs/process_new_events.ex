@@ -2,7 +2,7 @@ defmodule Jobs.ProcessNewEvents do
   import ShortMaps
   require Logger
 
-  @interval [minutes: -240]
+  @interval [minutes: -1440]
   @turnout_survey_page 858
 
   def go do
@@ -57,7 +57,7 @@ defmodule Jobs.ProcessNewEvents do
     "/rest/v1/user/" <> creator_id = creator
     ~m(email first_name last_name phone) = creator = fetch_contact_info(creator_id)
 
-    AkProxy.post(
+    AkProxy.put(
       "events/#{id}",
       body: %{
         contact: %{
@@ -86,7 +86,7 @@ defmodule Jobs.ProcessNewEvents do
           event.tags
         end
 
-      AkProxy.post("events/#{id}", body: %{"tags" => new_tags})
+      AkProxy.put("events/#{id}", body: %{"tags" => new_tags})
     end
 
     param
@@ -118,7 +118,7 @@ defmodule Jobs.ProcessNewEvents do
         ~m(status tags type)
       end
 
-    AkProxy.post("events/#{id}", body: body)
+    AkProxy.put("events/#{id}", body: body)
     event = Ak.Api.get("event/#{id}").body
     Map.put(params, "event", event)
   end

@@ -10,13 +10,14 @@ defmodule Jobs.SyncEvents do
 
     client = OsdiClient.build_client(endpoint, osdi_api_token)
 
-    OsdiClient.stream(client, "events")
-    |> Stream.filter(fn ev -> keys_not_nil(ev, [~w(location postal_code)]) end)
-    |> Enum.to_list()
-    |> IO.inspect()
-    |> Enum.filter(filter_by(schema || json_schema_filter))
-    |> Enum.to_list()
-    |> IO.inspect()
+    all_events =
+      OsdiClient.stream(client, "events")
+      |> Enum.to_list()
+      |> Enum.filter(fn ev -> keys_not_nil(ev, [~w(location postal_code)]) end)
+      |> IO.inspect()
+      |> Enum.filter(filter_by(schema || json_schema_filter))
+      |> Enum.to_list()
+      |> IO.inspect()
 
     # |> Enum.map(&update_or_add/1)
     # |> Stream.run()
