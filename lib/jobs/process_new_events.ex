@@ -37,7 +37,9 @@ defmodule Jobs.ProcessNewEvents do
 
     Ak.Api.stream("action", query: ~m(order_by page))
     |> Enum.take_while(&is_within_interval/1)
+    |> Enum.filter(&is_missing_event_id/1)
     |> Enum.map(&fetch_corresponding_event/1)
+    |> Enum.map(&join_event_id_and_survey/1)
     |> Enum.map(&send_out/1)
   end
 
@@ -84,10 +86,10 @@ defmodule Jobs.ProcessNewEvents do
       %{body: event} = OsdiClient.get(ak_client(), "events/#{id}")
 
       new_tags =
-        if not Enum.member?(event.tags, "Calendar: Local Chapter") do
-          ["Calendar: Local Chapter" | event.tags]
+        if not Enum.member?(event["tags"], "Calendar: Local Chapter") do
+          ["Calendar: Local Chapter" | event["tags"]]
         else
-          event.tags
+          event["tags"]
         end
 
       OsdiClient.put(ak_client(), "events/#{id}", %{"tags" => new_tags})
@@ -100,13 +102,13 @@ defmodule Jobs.ProcessNewEvents do
     %{body: event} = OsdiClient.get(ak_client(), "events/#{id}")
 
     tags =
-      case event.tags do
+      case event["tags"] do
         [] -> get_event_tags(ak_event)
         more_things -> more_things
       end
 
     type =
-      case event.type do
+      case event["type"] do
         "Unknown" -> get_event_type(ak_event)
         type -> type
       end
@@ -167,6 +169,10 @@ defmodule Jobs.ProcessNewEvents do
     IO.inspect(HTTPotion.post(turnout_request, body: body))
   end
 
+  def is_missing_event_id(~m(fields)) do
+    not Map.has_key?(fields, "event_id")
+  end
+
   def fetch_corresponding_event(survey = ~m(user fields)) do
     "/rest/v1/user/" <> user_id = user
     order_by = "-created_at"
@@ -192,6 +198,32 @@ defmodule Jobs.ProcessNewEvents do
         HTTPotion.post(turnout_request_error, body: body)
         :error
     end
+  end
+
+  def join_event_id_and_survey({~m(resource_uri fields), event_id}) do
+    "/rest/v1/" <> survey_action_uri = resource_uri
+    survey_id = String.split(survey_action_uri, "/") |> Enum.at(1)
+
+    add_event_id_to_survey_task =
+      Task.async(fn ->
+        new_fields = Map.put(fields, "event_id", event_id)
+        Ak.Api.put(survey_action_uri, body: %{"fields" => new_fields})
+        %{body: s} = Ak.Api.get(survey_action_uri)
+        s
+      end)
+
+    add_survey_id_to_event_task =
+      Task.async(fn ->
+        Ak.Api.post(
+          "eventfield",
+          body: %{"value" => survey_id, "event" => event_id, "name" => "survey_id"}
+        )
+
+        event_id
+      end)
+
+    [a, b] = Enum.map([add_event_id_to_survey_task, add_survey_id_to_event_task], &Task.await/1)
+    {a, b}
   end
 
   def fetch_contact_info(user_id) do
