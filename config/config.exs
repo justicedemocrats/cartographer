@@ -19,6 +19,13 @@ config :logger, :console,
 
 config :cosmic, slug: "brand-new-congress"
 
+config :cartographer, Cartographer.Scheduler,
+  jobs: [
+    {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
+    {"*/3 * * * *", {Cartographer.EventCache, :updpate, []}},
+    {"*/5 * * * *", {Cartographer.Airtable, :update, []}}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

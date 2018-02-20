@@ -34,10 +34,3 @@ config :actionkit,
   base: "${AK_BASE}",
   username: "${AK_USERNAME}",
   password: "${AK_PASSWORD}"
-
-config :cartographer, Cartographer.Scheduler,
-  jobs: [
-    {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
-    {"*/3 * * * *", {Cartographer.EventCache, :updpate, []}},
-    {"*/5 * * * *", {Cartographer.Airtable, :update, []}}
-  ]
