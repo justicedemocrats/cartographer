@@ -13,7 +13,8 @@ defmodule Cartographer do
       supervisor(Phoenix.PubSub.PG2, [:cartographer, []]),
       worker(Cosmic, [[application: :cartographer]]),
       worker(Cartographer.Scheduler, []),
-      worker(Cartographer.Airtable, [])
+      worker(Cartographer.Airtable, []),
+      worker(Cartographer.EventCache, [])
       # Start your own worker by calling: Cartographer.Worker.start_link(arg1, arg2, arg3)
       # worker(Cartographer.Worker, [arg1, arg2, arg3]),
     ]

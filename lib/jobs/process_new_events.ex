@@ -1,5 +1,6 @@
 defmodule Jobs.ProcessNewEvents do
   import ShortMaps
+  import AkClient
   require Logger
 
   @interval [minutes: -5]
@@ -22,6 +23,12 @@ defmodule Jobs.ProcessNewEvents do
     recent_events
     |> Enum.map(&wrap_event/1)
     |> Enum.map(&pipeline/1)
+  end
+
+  def process_single_id(id) do
+    Ak.Api.get("event/#{id}").body
+    |> wrap_event()
+    |> pipeline()
   end
 
   def handle_new_turnout_requests do
@@ -57,16 +64,13 @@ defmodule Jobs.ProcessNewEvents do
     "/rest/v1/user/" <> creator_id = creator
     ~m(email first_name last_name phone) = creator = fetch_contact_info(creator_id)
 
-    AkProxy.put(
-      "events/#{id}",
-      body: %{
-        contact: %{
-          email_address: email,
-          name: "#{first_name} #{last_name}",
-          phone_number: phone
-        }
+    OsdiClient.put(ak_client(), "events/#{id}", %{
+      contact: %{
+        email_address: email,
+        name: "#{first_name} #{last_name}",
+        phone_number: phone
       }
-    )
+    })
 
     event = Ak.Api.get("event/#{id}").body
     ~m(event creator)
@@ -77,7 +81,7 @@ defmodule Jobs.ProcessNewEvents do
     local_leader_emails = String.split(local_chapter_leader_list, "\n")
 
     if Enum.member?(local_leader_emails, email) do
-      %{body: event} = AkProxy.get("events/#{id}")
+      %{body: event} = OsdiClient.get(ak_client(), "events/#{id}")
 
       new_tags =
         if not Enum.member?(event.tags, "Calendar: Local Chapter") do
@@ -86,14 +90,14 @@ defmodule Jobs.ProcessNewEvents do
           event.tags
         end
 
-      AkProxy.put("events/#{id}", body: %{"tags" => new_tags})
+      OsdiClient.put(ak_client(), "events/#{id}", %{"tags" => new_tags})
     end
 
     param
   end
 
   def auto_publish(params = %{"event" => ak_event = ~m(id)}) do
-    %{body: event} = AkProxy.get("events/#{id}")
+    %{body: event} = OsdiClient.get(ak_client(), "events/#{id}")
 
     tags =
       case event.tags do
@@ -118,14 +122,14 @@ defmodule Jobs.ProcessNewEvents do
         ~m(status tags type)
       end
 
-    AkProxy.put("events/#{id}", body: body)
+    OsdiClient.put(ak_client(), "events/#{id}", body)
     event = Ak.Api.get("event/#{id}").body
     Map.put(params, "event", event)
   end
 
   # CURRENTLY UNSUED
   def send_out_if_volunteer(params = %{"event" => %{"is_approved" => false, "id" => id}}) do
-    %{body: osdi_format} = AkProxy.get("events/#{id}")
+    %{body: osdi_format} = OsdiClient.get(ak_client(), "events/#{id}")
     %{"metadata" => ~m(vol_event_submission)} = Cosmic.get("jd-esm-config")
     body = Poison.encode!(osdi_format)
 
@@ -158,7 +162,7 @@ defmodule Jobs.ProcessNewEvents do
 
   def send_out({survey, event_id}) do
     %{"metadata" => ~m(turnout_request)} = Cosmic.get("jd-esm-config")
-    %{body: event} = AkProxy.get("events/#{event_id}")
+    %{body: event} = OsdiClient.get(ak_client(), "events/#{event_id}")
     body = Poison.encode!(~m(survey event))
     IO.inspect(HTTPotion.post(turnout_request, body: body))
   end

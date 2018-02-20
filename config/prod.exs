@@ -38,5 +38,6 @@ config :actionkit,
 config :cartographer, Cartographer.Scheduler,
   jobs: [
     {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
+    {"*/3 * * * *", {Cartographer.EventCache, :updpate, []}},
     {"*/5 * * * *", {Cartographer.Airtable, :update, []}}
   ]

@@ -1,5 +1,6 @@
 defmodule Jobs.SyncEvents do
   import ShortMaps
+  import AkClient
   require Logger
 
   def sync_all do
@@ -73,10 +74,10 @@ defmodule Jobs.SyncEvents do
   end
 
   def update_event(id, event) do
-    AkProxy.put("events/#{id}", body: event)
+    OsdiClient.put(ak_client(), "events/#{id}", event)
   end
 
   def create_event(event) do
-    AkProxy.post("events", body: event)
+    OsdiClient.post(ak_client(), "events", event)
   end
 end
