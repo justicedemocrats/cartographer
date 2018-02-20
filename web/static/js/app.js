@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { render } from "react-dom";
 import ReactMapGL from "react-map-gl";
-import socket from "./socket";
+import data from "./channel";
 
 class Map extends Component {
   state = {
@@ -11,11 +11,21 @@ class Map extends Component {
       latitude: 37.7577,
       longitude: -122.4376,
       zoom: 8
-    }
+    },
+    channel: null,
+    events: {}
   };
 
-  componentDidMount () {
-    console.log('hi')
+  componentDidMount() {
+    data.initalize().then(ch => {
+      this.state.channel = ch;
+      data.getEvents();
+
+      this.state.channel.on("event", event => {
+        this.state.events[event.id] = event;
+        this.forceUpdate();
+      });
+    });
   }
 
   render() {
