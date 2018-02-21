@@ -43,6 +43,15 @@ defmodule Jobs.ProcessNewEvents do
     |> Enum.map(&send_out/1)
   end
 
+  def turnout_requests_with_event_id do
+    order_by = "-created_at"
+    page = @turnout_survey_page
+
+    Ak.Api.stream("action", query: ~m(order_by page))
+    |> Stream.filter(fn ~m(fields) -> Map.has_key?(fields, "event_id") end)
+    |> Enum.take(2)
+  end
+
   def is_within_interval(~m(created_at)) do
     {_, created_dt, _} = DateTime.from_iso8601(created_at <> "Z")
     benchmark = Timex.now() |> Timex.shift(@interval)
@@ -216,7 +225,7 @@ defmodule Jobs.ProcessNewEvents do
       Task.async(fn ->
         Ak.Api.post(
           "eventfield",
-          body: %{"value" => survey_id, "event" => event_id, "name" => "survey_id"}
+          body: %{"value" => survey_id, "event" => "/event/#{event_id}/", "name" => "survey_id"}
         )
 
         event_id
