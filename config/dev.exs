@@ -30,7 +30,8 @@ config :cartographer, Cartographer.Endpoint,
       "watch",
       "web/static/js/app.js",
       "--out-dir",
-      "priv/static/js"
+      "priv/static/js",
+      "--no-cache"
     ]
   ]
 
@@ -61,7 +62,8 @@ config :actionkit,
 config :cartographer,
   airtable_key: System.get_env("AIRTABLE_KEY"),
   airtable_base: System.get_env("AIRTABLE_BASE"),
-  airtable_table_name: System.get_env("AIRTABLE_TABLE_NAME")
+  airtable_table_name: System.get_env("AIRTABLE_TABLE_NAME"),
+  mapbox_api_access_token: System.get_env("MAPBOX_API_ACCESS_TOKEN")
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

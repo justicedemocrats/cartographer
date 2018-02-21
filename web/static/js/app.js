@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { render } from "react-dom";
 import ReactMapGL from "react-map-gl";
-import data from "./channel";
 
 class Map extends Component {
   state = {
@@ -13,26 +12,24 @@ class Map extends Component {
       zoom: 8
     },
     channel: null,
-    events: {}
+    events: {},
+    mapboxApiAccessToken: undefined
   };
 
-  componentDidMount() {
-    data.initalize().then(ch => {
-      this.state.channel = ch;
-      data.getEvents();
-
-      this.state.channel.on("event", event => {
-        this.state.events[event.id] = event;
-        this.forceUpdate();
-      });
-    });
+  componentWillMount() {
+    this.state.mapboxApiAccessToken = document
+      .getElementById("mapbox_api_access_token")
+      .getAttribute("data");
   }
 
   render() {
+    console.log(this.state.mapboxApiAccessToken);
+
     return (
       <ReactMapGL
         {...this.state.viewport}
         onViewPortChange={viewport => this.setState({ viewport })}
+        mapboxApiAccessToken={this.state.mapboxApiAccessToken}
       />
     );
   }

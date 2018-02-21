@@ -110,11 +110,22 @@ defmodule Jobs.ProcessNewEvents do
   def auto_publish(params = %{"event" => ak_event = ~m(id)}) do
     %{body: event} = OsdiClient.get(ak_client(), "events/#{id}")
 
-    tags =
-      case event["tags"] do
-        [] -> get_event_tags(ak_event)
-        more_things -> more_things
+    # Add candidate tag
+    candidate_tags =
+      case get_event_candidate(ak_event) do
+        nil -> []
+        "" -> []
+        candidate -> ["Calendar: #{candidate}"]
       end
+
+    tags =
+      Enum.concat(
+        case event["tags"] do
+          [] -> get_event_tags(ak_event)
+          more_things -> more_things
+        end,
+        candidate_tags
+      )
 
     type =
       case event["type"] do
@@ -153,15 +164,20 @@ defmodule Jobs.ProcessNewEvents do
     params
   end
 
-  def get_event_tags(~m(fields)) do
-    case Enum.filter(fields, fn f -> f["name"] == "event_tags" end) |> List.first() do
-      ~m(value) -> Poison.decode!(value)
-      nil -> "Unknown"
-    end
+  def get_event_tags(event) do
+    get_value_of_event_field(event, "event_tags")
   end
 
-  def get_event_type(~m(fields)) do
-    case Enum.filter(fields, fn f -> f["name"] == "event_type" end) |> List.first() do
+  def get_event_type(event) do
+    get_value_of_event_field(event, "event_type")
+  end
+
+  def get_event_candidate(event) do
+    get_value_of_event_field(event, "event_candidate")
+  end
+
+  def get_value_of_event_field(~m(fields), field) do
+    case Enum.filter(fields, fn f -> f["name"] == field end) |> List.first() do
       ~m(value) -> value
       nil -> []
     end
