@@ -3,11 +3,11 @@ defmodule Jobs.ProcessNewEvents do
   import AkClient
   require Logger
 
-  @interval [minutes: -5]
+  @interval [minutes: -6]
   @turnout_survey_page 858
 
   def go do
-    handle_new_events()
+    # handle_new_events()
     handle_new_turnout_requests()
   end
 
@@ -37,10 +37,11 @@ defmodule Jobs.ProcessNewEvents do
 
     Ak.Api.stream("action", query: ~m(order_by page))
     |> Enum.take_while(&is_within_interval/1)
-    |> Enum.filter(&is_missing_event_id/1)
-    |> Enum.map(&fetch_corresponding_event/1)
-    |> Enum.map(&join_event_id_and_survey/1)
-    |> Enum.map(&send_out/1)
+    |> Stream.filter(&is_missing_event_id/1)
+    |> Stream.map(&fetch_corresponding_event/1)
+    |> Stream.map(&join_event_id_and_survey/1)
+    |> Stream.map(&send_out/1)
+    |> Enum.to_list()
   end
 
   def turnout_requests_with_event_id do
@@ -190,9 +191,22 @@ defmodule Jobs.ProcessNewEvents do
   def send_out({survey, event_id}) do
     %{"metadata" => ~m(turnout_request)} = Cosmic.get("jd-esm-config")
     %{body: event} = OsdiClient.get(ak_client(), "events/#{event_id}")
-    body = Poison.encode!(~m(survey event))
+    candidate = Enum.filter(event["tags"], &is_candidate_tag/1) |> List.first() |> get_candidate()
+    body = Poison.encode!(~m(survey event candidate))
     IO.inspect(HTTPotion.post(turnout_request, body: body))
   end
+
+  def is_candidate_tag("Calendar: " <> candidate) do
+    not (String.contains?(candidate, "Brand New Congress") or
+           String.contains?(candidate, "Justice Democrats"))
+  end
+
+  def is_candidate_tag(_other) do
+    false
+  end
+
+  def get_candidate("Calendar: " <> candidate), do: candidate
+  def get_candidate(_other), do: nil
 
   def is_missing_event_id(~m(fields)) do
     not Map.has_key?(fields, "event_id")
@@ -225,23 +239,26 @@ defmodule Jobs.ProcessNewEvents do
     end
   end
 
-  def join_event_id_and_survey({~m(resource_uri fields), event_id}) do
-    "/rest/v1/" <> survey_action_uri = resource_uri
-    survey_id = String.split(survey_action_uri, "/") |> Enum.at(1)
+  def join_event_id_and_survey({survey, event_id}) do
+    survey_action_uri = "surveyaction/#{survey["id"]}"
+    fields = Map.drop(survey, ~w(phone email first_name last_name id))
 
     add_event_id_to_survey_task =
       Task.async(fn ->
         new_fields = Map.put(fields, "event_id", event_id)
         Ak.Api.put(survey_action_uri, body: %{"fields" => new_fields})
-        %{body: s} = Ak.Api.get(survey_action_uri)
-        s
+        survey
       end)
 
     add_survey_id_to_event_task =
       Task.async(fn ->
         Ak.Api.post(
           "eventfield",
-          body: %{"value" => survey_id, "event" => "/event/#{event_id}/", "name" => "survey_id"}
+          body: %{
+            "value" => survey["id"],
+            "event" => "/event/#{event_id}/",
+            "name" => "survey_id"
+          }
         )
 
         event_id
