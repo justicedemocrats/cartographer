@@ -7,7 +7,7 @@ defmodule Jobs.ProcessNewEvents do
   @turnout_survey_page 858
 
   def go do
-    # handle_new_events()
+    handle_new_events()
     handle_new_turnout_requests()
   end
 
