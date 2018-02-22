@@ -37,11 +37,27 @@ defmodule Jobs.ProcessNewEvents do
 
     Ak.Api.stream("action", query: ~m(order_by page))
     |> Enum.take_while(&is_within_interval/1)
-    |> Stream.filter(&is_missing_event_id/1)
-    |> Stream.map(&fetch_corresponding_event/1)
-    |> Stream.map(&join_event_id_and_survey/1)
+    |> Stream.map(&turnout_request_fork/1)
     |> Stream.map(&send_out/1)
     |> Enum.to_list()
+  end
+
+  def turnout_request_fork(survey = ~m(user fields)) do
+    event_id =
+      case get_event_id(survey) do
+        :not_found ->
+          survey
+          |> fetch_corresponding_event()
+
+        event_id ->
+          event_id
+      end
+
+    "/rest/v1/user/" <> user_id = user
+    contact_info = fetch_contact_info(user_id)
+
+    {Map.merge(fields, contact_info), event_id}
+    |> join_event_id_and_survey()
   end
 
   def turnout_requests_with_event_id do
@@ -208,12 +224,9 @@ defmodule Jobs.ProcessNewEvents do
   def get_candidate("Calendar: " <> candidate), do: candidate
   def get_candidate(_other), do: nil
 
-  def is_missing_event_id(~m(fields)) do
-    not Map.has_key?(fields, "event_id")
-  end
+  def get_event_id(~m(fields)), do: Map.get(fields, "event_id", :not_found)
 
-  def fetch_corresponding_event(survey = ~m(user fields)) do
-    "/rest/v1/user/" <> user_id = user
+  def fetch_corresponding_event(survey = ~m(user)) do
     order_by = "-created_at"
 
     match =
@@ -228,8 +241,7 @@ defmodule Jobs.ProcessNewEvents do
 
     case match do
       ~m(id) ->
-        contact_info = fetch_contact_info(user_id)
-        {Map.merge(fields, contact_info), id}
+        id
 
       _ ->
         %{"metadata" => ~m(turnout_request_error)} = Cosmic.get("jd-esm-config")
