@@ -39,7 +39,8 @@ defmodule OsdiClient do
 
   def extract_embedded_items(body) do
     key =
-      Map.get(body, "_embedded")
+      body
+      |> Map.get("_embedded")
       |> Map.keys()
       |> Enum.filter(fn
         "osdi:" <> _rest -> true

@@ -80,13 +80,16 @@ defmodule Cartographer.FetchEvents do
     end
   end
 
-  def parse(dt, offset \\ 0) do
-    iso = if String.ends_with?(dt, "Z"), do: dt, else: dt <> "Z"
-    {:ok, result, _} = DateTime.from_iso8601(iso)
+  def parse(dt, _offset \\ 0) do
+    case DateTime.from_iso8601(dt) do
+      {:ok, result, _} ->
+        result
 
-    timestamp = Timex.to_unix(result)
-    with_offset = timestamp - offset
-
-    Timex.from_unix(with_offset)
+      _ ->
+        case DateTime.from_iso8601(dt <> "Z") do
+          {:ok, result, _} -> result
+          _ -> Timex.now()
+        end
+    end
   end
 end

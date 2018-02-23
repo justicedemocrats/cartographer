@@ -34,3 +34,7 @@ config :actionkit,
   base: "${AK_BASE}",
   username: "${AK_USERNAME}",
   password: "${AK_PASSWORD}"
+
+config :cartographer,
+  event_synced_webhook: "${EVENT_SYNCED_WEBHOOK}",
+  event_deleted_webhook: "${EVENT_DELETED_WEBHOOK}"

@@ -16,7 +16,8 @@ defmodule Cartographer.Airtable do
     osdi_api_token = fields["OSDI API Token"]
     endpoint = fields["Endpoint"]
     json_schema_filter = fields["JSON Schema Filter"]
-    {slugify(fields["Reference Name"]), ~m(osdi_api_token endpoint json_schema_filter)}
+    reference_name = fields["Reference Name"]
+    {slugify(reference_name), ~m(osdi_api_token endpoint json_schema_filter reference_name)}
   end
 
   def slugify(reference_name) do

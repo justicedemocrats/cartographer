@@ -65,6 +65,10 @@ config :cartographer,
   airtable_table_name: System.get_env("AIRTABLE_TABLE_NAME"),
   mapbox_api_access_token: System.get_env("MAPBOX_API_ACCESS_TOKEN")
 
+config :cartographer,
+  event_synced_webhook: System.get_env("EVENT_SYNCED_WEBHOOK"),
+  event_deleted_webhook: System.get_env("EVENT_DELETED_WEBHOOK")
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

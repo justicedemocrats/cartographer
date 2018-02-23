@@ -22,6 +22,7 @@ defmodule Jobs.ProcessNewEvents do
 
     recent_events
     |> Enum.map(&wrap_event/1)
+    |> Enum.filter(&is_not_from_sync/1)
     |> Enum.map(&pipeline/1)
   end
 
@@ -77,6 +78,10 @@ defmodule Jobs.ProcessNewEvents do
 
   def wrap_event(event) do
     ~m(event)
+  end
+
+  def is_not_from_sync(%{"event" => ~m(tags)}) do
+    not Enum.member?(tags, "Source: Sync")
   end
 
   def pipeline(event) do
