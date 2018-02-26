@@ -80,8 +80,9 @@ defmodule Jobs.ProcessNewEvents do
     ~m(event)
   end
 
-  def is_not_from_sync(%{"event" => ~m(tags)}) do
-    not Enum.member?(tags, "Source: Sync")
+  def is_not_from_sync(~m(event)) do
+    not (get_event_tags(event)
+         |> Enum.member?("Source: Sync"))
   end
 
   def pipeline(event) do
@@ -141,13 +142,13 @@ defmodule Jobs.ProcessNewEvents do
       end
 
     tags =
-      Enum.concat(
-        case event["tags"] do
-          [] -> get_event_tags(ak_event)
-          more_things -> more_things
-        end,
+      Enum.concat([
+        get_event_tags(ak_event),
+        event["tags"],
         candidate_tags
-      )
+      ])
+      |> MapSet.new()
+      |> Enum.to_list()
 
     type =
       case event["type"] do
@@ -187,7 +188,12 @@ defmodule Jobs.ProcessNewEvents do
   end
 
   def get_event_tags(event) do
-    get_value_of_event_field(event, "event_tags")
+    string_val = get_value_of_event_field(event, "event_tags")
+
+    case Poison.decode(string_val) do
+      {:ok, map} -> map
+      _ -> string_val
+    end
   end
 
   def get_event_type(event) do
@@ -214,7 +220,7 @@ defmodule Jobs.ProcessNewEvents do
     %{body: event} = OsdiClient.get(ak_client(), "events/#{event_id}")
     candidate = Enum.filter(event["tags"], &is_candidate_tag/1) |> List.first() |> get_candidate()
     body = Poison.encode!(~m(survey event candidate))
-    IO.inspect(HTTPotion.post(turnout_request, body: body))
+    HTTPotion.post(turnout_request, body: body)
   end
 
   def is_candidate_tag("Calendar: " <> candidate) do
