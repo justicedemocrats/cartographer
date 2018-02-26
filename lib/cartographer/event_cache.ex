@@ -23,6 +23,7 @@ defmodule Cartographer.EventCache do
     all_events = Cartographer.FetchEvents.all()
     Agent.update(__MODULE__, fn _ -> all_events end)
     Logger.info("Updated event cache at #{Timex.now() |> DateTime.to_iso8601()}")
+    all_events
   end
 
   def all do

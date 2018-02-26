@@ -15,18 +15,22 @@ defmodule Cartographer.FetchEvents do
     end
   end
 
-  def is_not_in_past(e = %{"end_date" => end_date, "time_zone" => time_zone})
+  def is_not_in_past(e = %{"end_date" => end_date, "location" => ~m(time_zone)})
       when is_binary(end_date) and is_binary(time_zone) do
     end_dt = extract_end_date(e)
     Timex.now() |> Timex.shift(hours: 2) |> Timex.before?(end_dt)
   end
 
-  def is_not_in_past(_) do
+  def is_not_in_past(_e) do
     false
   end
 
   def extract_end_date(e) do
-    ~m(offset_utc)a = Timex.Timezone.get(e["time_zone"]) |> Map.take([:offset_utc])
+    ~m(offset_utc)a =
+      get_in(e, ~w(location time_zone))
+      |> Timex.Timezone.get()
+      |> Map.take([:offset_utc])
+
     parse(e["end_date"], offset_utc)
   end
 
