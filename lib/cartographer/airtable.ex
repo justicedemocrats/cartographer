@@ -6,7 +6,7 @@ defmodule Cartographer.Airtable do
   def base, do: Application.get_env(:cartographer, :airtable_base)
   def table, do: Application.get_env(:cartographer, :airtable_table_name)
   def view, do: "Grid view"
-  def into_what, do: %{} |> IO.inspect()
+  def into_what, do: %{}
 
   def filter_record(~m(fields)) do
     Map.has_key?(fields, "OSDI API Token")

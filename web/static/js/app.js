@@ -3,18 +3,21 @@ import { render } from "react-dom";
 import ReactMapGL from "react-map-gl";
 
 class Map extends Component {
-  state = {
-    viewport: {
-      width: 400,
-      height: 400,
-      latitude: 37.7577,
-      longitude: -122.4376,
-      zoom: 8
-    },
-    channel: null,
-    events: {},
-    mapboxApiAccessToken: undefined
-  };
+  constructor() {
+    super();
+    this.state = {
+      viewport: {
+        width: 400,
+        height: 400,
+        latitude: 37.7577,
+        longitude: -122.4376,
+        zoom: 8
+      },
+      channel: null,
+      events: {},
+      mapboxApiAccessToken: undefined
+    };
+  }
 
   componentWillMount() {
     this.state.mapboxApiAccessToken = document
@@ -23,8 +26,6 @@ class Map extends Component {
   }
 
   render() {
-    console.log(this.state.mapboxApiAccessToken);
-
     return (
       <ReactMapGL
         {...this.state.viewport}

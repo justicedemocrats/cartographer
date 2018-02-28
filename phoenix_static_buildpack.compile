@@ -1,3 +1,3 @@
 mkdir -p priv/static
-NODE_ENV=prod node_modules/parcel-bundler/bin/cli.js build web/static/js/app.js --out-dir priv/static/js
+npm run deploy
 mix phx.digest
