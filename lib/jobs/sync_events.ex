@@ -4,11 +4,16 @@ defmodule Jobs.SyncEvents do
   require Logger
 
   def sync_all do
+    Cartographer.Airtable.get_all()
+    |> Map.keys()
+    |> Enum.map(&sync_candidate/1)
   end
 
   def sync_candidate(candidate, schema \\ nil) do
-    ~m(endpoint osdi_api_token json_schema_filter reference_name) =
-      Cartographer.Airtable.get_all()[candidate]
+    ~m(
+      endpoint osdi_api_token json_schema_filter reference_name
+      candidate_events_url point_of_contact
+    ) = Cartographer.Airtable.get_all()[candidate]
 
     external_client = OsdiClient.build_client(endpoint, osdi_api_token)
 
@@ -21,7 +26,8 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(filter_by(schema || json_schema_filter))
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
       |> Stream.map(&update_or_add/1)
-      |> Stream.map(&notify/1)
+      |> Enum.take(1)
+      |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
 
     Logger.info("Synced #{length(their_events_synced)} events")
@@ -34,16 +40,15 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(fn ev -> is_for_candidate(ev, reference_name) end)
       |> Stream.filter(fn ev -> should_delete(ev, their_events_synced) end)
       |> Stream.map(&delete_event/1)
-      |> Stream.map(&notify/1)
+      |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
 
     Logger.info("Deleting #{length(deleted)} events")
-    # |> Stream.run()
   end
 
   def is_in_future(~m(start_date)) do
     case DateTime.from_iso8601(start_date) do
-      {:ok, dt, _} -> Timex.now() |> Timex.before?(dt)
+      {:ok, dt, _} -> Timex.now() |> Timex.shift(days: -1) |> Timex.before?(dt)
       _ -> false
     end
   end
@@ -159,7 +164,7 @@ defmodule Jobs.SyncEvents do
         end
 
       _ ->
-        OsdiClient.put(ak_client(), "events/#{id}", event)
+        OsdiClient.put(ak_client(), "events/#{id}", event |> IO.inspect())
     end
 
     OsdiClient.get(ak_client(), "events/#{id}").body
@@ -169,20 +174,26 @@ defmodule Jobs.SyncEvents do
     OsdiClient.post(ak_client(), "events", event).body
   end
 
-  def notify({:created, event}) do
+  def notify({:created, event}, candidate_events_url, point_of_contact) do
+    transformed =
+      event
+      |> Map.put("candidate_events_url", candidate_events_url)
+      |> Map.put("point_of_contact", point_of_contact)
+      |> Cartographer.FetchEvents.add_date_line()
+
     Application.get_env(:cartographer, :event_synced_webhook)
-    |> HTTPotion.post(body: Poison.encode!(event))
+    |> HTTPotion.post(body: Poison.encode!(transformed))
 
     Logger.info("Created event #{event["id"]}")
     event
   end
 
-  def notify({:updated, event}) do
+  def notify({:updated, event}, _candidate_events_url, _point_of_contact) do
     Logger.info("Event #{event["id"]} was updated. No webhook sent.")
     event
   end
 
-  def notify({:deleted, event}) do
+  def notify({:deleted, event}, _candidate_events_url, _point_of_contact) do
     Application.get_env(:cartographer, :event_deleted_webhook)
     |> HTTPotion.post(body: Poison.encode!(event))
 
