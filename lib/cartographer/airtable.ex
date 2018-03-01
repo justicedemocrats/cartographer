@@ -9,7 +9,7 @@ defmodule Cartographer.Airtable do
   def into_what, do: %{}
 
   def filter_record(~m(fields)) do
-    Map.has_key?(fields, "Candidate Events Url")
+    Map.has_key?(fields, "Active")
   end
 
   def process_record(~m(fields)) do
