@@ -3,7 +3,7 @@ defmodule Jobs.SyncEvents do
   import AkClient
   require Logger
 
-  @do_delete false
+  @do_delete true
 
   def sync_all do
     Cartographer.Airtable.get_all()
