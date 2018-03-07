@@ -27,7 +27,6 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(fn ev -> keys_not_nil(ev, [~w(location postal_code)]) end)
       |> Stream.filter(filter_by(schema || json_schema_filter))
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
-      |> Enum.take(40)
       |> Stream.map(&update_or_add/1)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
