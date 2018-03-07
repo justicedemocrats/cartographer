@@ -3,7 +3,10 @@ defmodule Jobs.SyncEvents do
   import AkClient
   require Logger
 
-  @do_delete true
+  @initial_sync false
+
+  @do_delete not @initial_sync
+  @send_email not @initial_sync
 
   def sync_all do
     Cartographer.Airtable.get_all()
@@ -184,8 +187,10 @@ defmodule Jobs.SyncEvents do
       |> Map.put("point_of_contact", point_of_contact)
       |> Cartographer.FetchEvents.add_date_line()
 
-    Application.get_env(:cartographer, :event_synced_webhook)
-    |> HTTPotion.post(body: Poison.encode!(transformed))
+    if @send_email do
+      Application.get_env(:cartographer, :event_synced_webhook)
+      |> HTTPotion.post(body: Poison.encode!(transformed))
+    end
 
     Logger.info("Created event #{event["id"]}")
     event
