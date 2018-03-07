@@ -4,7 +4,7 @@ defmodule OsdiClient do
 
   def build_client(base, osdi_api_token) do
     Tesla.build_client([
-      {Tesla.Middleware.JSON, []},
+      {Tesla.Middleware.JSON, decode_content_types: ["application/hal+json"]},
       {Tesla.Middleware.Headers, %{"OSDI-API-Token" => osdi_api_token}},
       {Tesla.Middleware.BaseUrl, base}
     ])

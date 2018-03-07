@@ -3,6 +3,8 @@ defmodule Jobs.SyncEvents do
   import AkClient
   require Logger
 
+  @do_delete false
+
   def sync_all do
     Cartographer.Airtable.get_all()
     |> Map.keys()
@@ -25,6 +27,7 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(fn ev -> keys_not_nil(ev, [~w(location postal_code)]) end)
       |> Stream.filter(filter_by(schema || json_schema_filter))
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
+      |> Enum.take(40)
       |> Stream.map(&update_or_add/1)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
@@ -32,17 +35,19 @@ defmodule Jobs.SyncEvents do
     Logger.info("Synced #{length(their_events_synced)} events")
 
     # Delete events in actionkit without a corresponding event in external system for candidate
-    deleted =
-      OsdiClient.stream(ak_client(), "events")
-      |> Stream.filter(&is_in_future/1)
-      |> Stream.filter(fn ~m(status) -> status == "confirmed" end)
-      |> Stream.filter(fn ev -> is_for_candidate(ev, reference_name) end)
-      |> Stream.filter(fn ev -> should_delete(ev, their_events_synced) end)
-      |> Stream.map(&delete_event/1)
-      |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
-      |> Enum.to_list()
+    if @do_delete do
+      deleted =
+        OsdiClient.stream(ak_client(), "events")
+        |> Stream.filter(&is_in_future/1)
+        |> Stream.filter(fn ~m(status) -> status == "confirmed" end)
+        |> Stream.filter(fn ev -> is_for_candidate(ev, reference_name) end)
+        |> Stream.filter(fn ev -> should_delete(ev, their_events_synced) end)
+        |> Stream.map(&delete_event/1)
+        |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
+        |> Enum.to_list()
 
-    Logger.info("Deleting #{length(deleted)} events")
+      Logger.info("Deleting #{length(deleted)} events")
+    end
   end
 
   def is_in_future(~m(start_date)) do
@@ -86,7 +91,7 @@ defmodule Jobs.SyncEvents do
   def delete_event(event = ~m(id)) do
     case OsdiClient.put(ak_client(), "events/#{id}", %{
            "status" => "cancelled",
-           "tags" => ["Sync: Cancelled" | event["tags"]]
+           "tags" => ["Sync: Cancelled" | tags_for(event)]
          }) do
       %{status: 200} ->
         {:deleted, event}
@@ -110,7 +115,7 @@ defmodule Jobs.SyncEvents do
   end
 
   def add_source_tags(event, reference_name) do
-    tags = Enum.concat(event["tags"], ["Calendar: #{reference_name}", "Source: Sync"])
+    tags = Enum.concat(tags_for(event), ["Calendar: #{reference_name}", "Source: Sync"])
     Map.put(event, "tags", tags)
   end
 
@@ -163,7 +168,7 @@ defmodule Jobs.SyncEvents do
         end
 
       _ ->
-        OsdiClient.put(ak_client(), "events/#{id}", event |> IO.inspect())
+        OsdiClient.put(ak_client(), "events/#{id}", event)
     end
 
     OsdiClient.get(ak_client(), "events/#{id}").body
@@ -180,8 +185,8 @@ defmodule Jobs.SyncEvents do
       |> Map.put("point_of_contact", point_of_contact)
       |> Cartographer.FetchEvents.add_date_line()
 
-    Application.get_env(:cartographer, :event_synced_webhook)
-    |> HTTPotion.post(body: Poison.encode!(transformed))
+    # Application.get_env(:cartographer, :event_synced_webhook)
+    # |> HTTPotion.post(body: Poison.encode!(transformed))
 
     Logger.info("Created event #{event["id"]}")
     event
@@ -202,5 +207,9 @@ defmodule Jobs.SyncEvents do
   def notify({:could_not_delete, event}) do
     Logger.info("Could not delete #{inspect(event)}")
     event
+  end
+
+  def tags_for(event) do
+    event["tags"] || []
   end
 end

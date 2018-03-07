@@ -157,7 +157,7 @@ defmodule Jobs.ProcessNewEvents do
       end
 
     body =
-      if Enum.member?(tags, "Source: Direct Publish") do
+      if Enum.member?(tags, "Source: Direct Publish") or Enum.member?(tags, "Source: Sync") do
         Logger.info("Auto publishing #{id}")
         status = "confirmed"
         ~m(status tags type)
