@@ -184,8 +184,8 @@ defmodule Jobs.SyncEvents do
       |> Map.put("point_of_contact", point_of_contact)
       |> Cartographer.FetchEvents.add_date_line()
 
-    # Application.get_env(:cartographer, :event_synced_webhook)
-    # |> HTTPotion.post(body: Poison.encode!(transformed))
+    Application.get_env(:cartographer, :event_synced_webhook)
+    |> HTTPotion.post(body: Poison.encode!(transformed))
 
     Logger.info("Created event #{event["id"]}")
     event
