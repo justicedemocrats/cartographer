@@ -25,14 +25,7 @@ config :cartographer, Cartographer.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    # node: [
-    #   "node_modules/parcel-bundler/bin/cli.js",
-    #   "watch",
-    #   "web/static/js/app.js",
-    #   "--out-dir",
-    #   "priv/static/js",
-    #   "--no-cache"
-    # ]
+    npm: ["run", "watch"]
   ]
 
 # Watch static and templates for browser reloading.
