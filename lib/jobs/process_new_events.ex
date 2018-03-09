@@ -237,10 +237,12 @@ defmodule Jobs.ProcessNewEvents do
 
   def get_event_id(~m(fields)), do: Map.get(fields, "event_id", :not_found)
 
-  def fetch_corresponding_event(survey = ~m(user)) do
+  def fetch_corresponding_event(survey = ~m(user fields)) do
     order_by = "-created_at"
 
-    match =
+    if Map.has_key?(fields, "event_id") do
+      event_id
+    else
       Ak.Api.stream("event", query: ~m(order_by))
       |> Enum.reduce_while(nil, fn e, _acc ->
         if e["creator"] == user do
@@ -250,15 +252,16 @@ defmodule Jobs.ProcessNewEvents do
         end
       end)
 
-    case match do
-      ~m(id) ->
-        id
+      case match do
+        ~m(id) ->
+          id
 
-      _ ->
-        %{"metadata" => ~m(turnout_request_error)} = Cosmic.get("jd-esm-config")
-        body = Poison.encode!(survey)
-        HTTPotion.post(turnout_request_error, body: body)
-        :error
+        _ ->
+          %{"metadata" => ~m(turnout_request_error)} = Cosmic.get("jd-esm-config")
+          body = Poison.encode!(survey)
+          HTTPotion.post(turnout_request_error, body: body)
+          :error
+      end
     end
   end
 
