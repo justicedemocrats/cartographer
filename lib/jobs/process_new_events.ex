@@ -243,14 +243,15 @@ defmodule Jobs.ProcessNewEvents do
     if Map.has_key?(fields, "event_id") do
       fields["event_id"]
     else
-      Ak.Api.stream("event", query: ~m(order_by))
-      |> Enum.reduce_while(nil, fn e, _acc ->
-        if e["creator"] == user do
-          {:halt, e}
-        else
-          {:cont, nil}
-        end
-      end)
+      match =
+        Ak.Api.stream("event", query: ~m(order_by))
+        |> Enum.reduce_while(nil, fn e, _acc ->
+          if e["creator"] == user do
+            {:halt, e}
+          else
+            {:cont, nil}
+          end
+        end)
 
       case match do
         ~m(id) ->
