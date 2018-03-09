@@ -241,7 +241,7 @@ defmodule Jobs.ProcessNewEvents do
     order_by = "-created_at"
 
     if Map.has_key?(fields, "event_id") do
-      event_id
+      fields["event_id"]
     else
       Ak.Api.stream("event", query: ~m(order_by))
       |> Enum.reduce_while(nil, fn e, _acc ->
