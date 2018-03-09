@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { render } from "react-dom";
-import ReactMapGL from "react-map-gl";
+import MapGL, { Marker, Popup, NavigationControl } from "react-map-gl";
 import socket from "./socket";
 
 class Map extends Component {
@@ -48,13 +48,17 @@ class Map extends Component {
 
   render() {
     return (
-      <ReactMapGL
+      <MapGL
         {...this.state.viewport}
         width={this.state.width}
         height={this.state.height}
         onViewPortChange={viewport => this.setState({ viewport })}
         mapboxApiAccessToken={this.state.mapboxApiAccessToken}
-      />
+      >
+        <div className="nav">
+          <NavigationControl onViewportChange={this._updateViewport} />
+        </div>
+      </MapGL>
     );
   }
 }

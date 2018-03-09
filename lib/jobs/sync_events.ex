@@ -30,6 +30,7 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(fn ev -> keys_not_nil(ev, [~w(location postal_code)]) end)
       |> Stream.filter(filter_by(schema || json_schema_filter))
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
+      |> Stream.map(&remove_html/1)
       |> Stream.map(&update_or_add/1)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
@@ -119,6 +120,13 @@ defmodule Jobs.SyncEvents do
   def add_source_tags(event, reference_name) do
     tags = Enum.concat(tags_for(event), ["Calendar: #{reference_name}", "Source: Sync"])
     Map.put(event, "tags", tags)
+  end
+
+  def remove_html(event) do
+    ~w(description instructions)
+    |> Enum.reduce(event, fn key, acc ->
+      Map.update(acc, key, "", &HtmlSanitizeEx.strip_tags/1)
+    end)
   end
 
   def keys_not_nil(map, keys_list) do
