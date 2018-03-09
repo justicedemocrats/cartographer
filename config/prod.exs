@@ -38,3 +38,5 @@ config :actionkit,
 config :cartographer,
   event_synced_webhook: "${EVENT_SYNCED_WEBHOOK}",
   event_deleted_webhook: "${EVENT_DELETED_WEBHOOK}"
+
+config :maps, key: "${MAPS_KEY}"

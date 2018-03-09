@@ -62,6 +62,9 @@ config :cartographer,
   event_synced_webhook: System.get_env("EVENT_SYNCED_WEBHOOK"),
   event_deleted_webhook: System.get_env("EVENT_DELETED_WEBHOOK")
 
+# Google maps
+config :maps, key: System.get_env("MAPS_KEY")
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

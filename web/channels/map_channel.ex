@@ -24,4 +24,10 @@ defmodule Cartographer.MapChannel do
 
     {:noreply, socket}
   end
+
+  def handle_in("district-lookup", ~m(address), socket) do
+    district = District.from_address(address)
+    push(socket, "distrct-lookup", ~m(district))
+    {:noreply, socket}
+  end
 end

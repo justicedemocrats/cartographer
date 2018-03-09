@@ -47,7 +47,11 @@ defmodule Cartographer.Mixfile do
       {:distillery, "~> 1.0.0"},
       {:ex_json_schema, "~> 0.5.4"},
       {:airtable_config, git: "https://github.com/justicedemocrats/airtable_config.git"},
-      {:html_sanitize_ex, "~> 1.3.0-rc3"}
+      {:html_sanitize_ex, "~> 1.3.0-rc3"},
+      {:maps, git: "https://github.com/justicedemocrats/maps_ex.git"},
+      {:geo, "~> 1.5"},
+      {:topo, "~> 0.1.0"},
+      {:stash, "~> 1.0.0"}
     ]
   end
 end
