@@ -23,7 +23,12 @@ defmodule Jobs.ProcessNewEvents do
     recent_events
     |> Enum.map(&wrap_event/1)
     |> Enum.filter(&is_not_from_sync/1)
-    |> Enum.map(&pipeline/1)
+    |> Enum.each(&pipeline/1)
+
+    recent
+    |> Enum.map(&wrap_event/1)
+    |> Enum.reject(&is_not_from_sync/1)
+    |> Enum.each(&sync_only_pipeline/1)
   end
 
   def process_single_id(id) do
@@ -92,6 +97,11 @@ defmodule Jobs.ProcessNewEvents do
     |> auto_publish()
 
     # |> send_out_if_volunteer()
+  end
+
+  def sync_only_pipeline(event) do
+    event
+    |> add_local_organizer_tag()
   end
 
   def ensure_attributes(%{"event" => ~m(creator id)}) do
