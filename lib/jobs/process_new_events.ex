@@ -25,7 +25,7 @@ defmodule Jobs.ProcessNewEvents do
     |> Enum.filter(&is_not_from_sync/1)
     |> Enum.each(&pipeline/1)
 
-    recent
+    recent_events
     |> Enum.map(&wrap_event/1)
     |> Enum.reject(&is_not_from_sync/1)
     |> Enum.each(&sync_only_pipeline/1)
