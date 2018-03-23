@@ -32,6 +32,7 @@ defmodule Jobs.SyncEvents do
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
       |> Stream.map(&remove_html/1)
       |> Stream.map(&try_update_or_add/1)
+      |> Stream.reject(fn result -> match?({:error, _}, result) end)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
 
