@@ -31,7 +31,7 @@ defmodule Jobs.SyncEvents do
       |> Stream.filter(filter_by(schema || json_schema_filter))
       |> Stream.map(fn ev -> add_source_tags(ev, reference_name) end)
       |> Stream.map(&remove_html/1)
-      |> Stream.map(&update_or_add/1)
+      |> Stream.map(&try_update_or_add/1)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
 
@@ -136,6 +136,14 @@ defmodule Jobs.SyncEvents do
     |> Enum.all?()
   end
 
+  def try_update_or_add(event) do
+    try do
+      update_or_add(event)
+    rescue
+      _e -> {:error, event}
+    end
+  end
+
   def update_or_add(event) do
     case find_id_of_event_with_external_id(event) do
       nil ->
@@ -185,7 +193,10 @@ defmodule Jobs.SyncEvents do
   end
 
   def create_event(event) do
-    OsdiClient.post(ak_client(), "events", event).body
+    case OsdiClient.post(ak_client(), "events", event) do
+      %{status: 200, body: body} -> body
+      _ -> raise("Error")
+    end
   end
 
   def notify({:created, event}, candidate_events_url, point_of_contact) do
@@ -214,6 +225,10 @@ defmodule Jobs.SyncEvents do
     |> HTTPotion.post(body: Poison.encode!(event))
 
     event
+  end
+
+  def notify({:error, event}, _candidate_events_url, _point_of_contact) do
+    Logger.error("Could not sync event: #{inspect(event)}")
   end
 
   def notify({:could_not_delete, event}) do
