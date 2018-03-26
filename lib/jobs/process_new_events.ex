@@ -217,7 +217,7 @@ defmodule Jobs.ProcessNewEvents do
   def get_value_of_event_field(~m(fields), field) do
     case Enum.filter(fields, fn f -> f["name"] == field end) |> List.first() do
       ~m(value) -> value
-      nil -> []
+      nil -> nil
     end
   end
 
