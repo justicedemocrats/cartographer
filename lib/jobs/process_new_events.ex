@@ -162,7 +162,7 @@ defmodule Jobs.ProcessNewEvents do
 
     type =
       case event["type"] do
-        "Unknown" -> get_event_type(ak_event)
+        "Unknown" -> get_event_type(ak_event) || "Other"
         type -> type
       end
 
