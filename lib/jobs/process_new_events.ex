@@ -198,11 +198,11 @@ defmodule Jobs.ProcessNewEvents do
   end
 
   def get_event_tags(event) do
-    string_val = get_value_of_event_field(event, "event_tags")
-
-    case Poison.decode(string_val) do
-      {:ok, map} -> map
-      _ -> string_val
+    with string_val when is_binary(string_val) <- get_value_of_event_field(event, "event_tags"),
+         {:ok, map} <- Poison.decode(string_val) do
+      map
+    else
+      _ -> get_value_of_event_field(event, "event_tags")
     end
   end
 
