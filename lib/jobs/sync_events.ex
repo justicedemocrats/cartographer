@@ -3,7 +3,7 @@ defmodule Jobs.SyncEvents do
   import AkClient
   require Logger
 
-  @initial_sync false
+  @initial_sync true
 
   @do_delete not @initial_sync
   @send_email not @initial_sync

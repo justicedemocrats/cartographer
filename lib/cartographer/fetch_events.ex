@@ -36,8 +36,10 @@ defmodule Cartographer.FetchEvents do
 
   def add_date_line(event = ~m(start_date end_date)) do
     date_line =
-      humanize_date(start_date) <>
-        "from " <> humanize_time(start_date) <> " - " <> humanize_time(end_date)
+      humanize_date(event["start_date"]) <>
+        "from " <>
+        humanize_time(event["start_date"], get_in(event, ~w(location time_zone))) <>
+        " - " <> humanize_time(event["end_date"], get_in(event, ~w(location time_zone)))
 
     Map.put(event, "date_line", date_line)
   end
@@ -63,6 +65,16 @@ defmodule Cartographer.FetchEvents do
       |> Enum.at(month - 1)
 
     "#{month}, #{day} "
+  end
+
+  defp humanize_time(dt, tz) do
+    zone = Timex.Timezone.get(tz)
+    %DateTime{hour: hour, minute: minute} = parse(dt) |> Timex.Timezone.convert(zone)
+    hour = if hour == 0, do: 12, else: hour
+    minute = if minute == 0, do: "", else: ":#{minute}"
+    {hour, am_pm} = if hour >= 12, do: {hour - 12, "PM"}, else: {hour, "AM"}
+    hour = if hour == 0, do: 12, else: hour
+    "#{hour}#{minute} " <> am_pm
   end
 
   defp humanize_time(dt) do
