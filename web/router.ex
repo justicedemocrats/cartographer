@@ -24,6 +24,7 @@ defmodule Cartographer.Router do
     pipe_through(:api)
 
     get("/events", ApiController, :events)
+    get("/geocode", ApiController, :district)
   end
 
   # Other scopes may use custom stacks.
