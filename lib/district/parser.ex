@@ -1,11 +1,14 @@
 defmodule District.Parser do
   def load_geojsons do
-    {:ok, districts} = "./lib/district/geojsons" |> File.ls()
+    districts =
+      "./lib/district/geojsons"
+      |> File.ls!()
+      |> Enum.filter(&(not String.contains?(&1, ".DS_Store")))
 
     geojsons =
       districts
-      |> Enum.filter(&(not String.contains?(&1, ".DS_Store")))
       |> Enum.map(fn district ->
+        IO.puts(district)
         {:ok, file} = "./lib/district/geojsons/#{district}" |> File.read()
         {:ok, %{"geometry" => geometry}} = file |> Poison.decode()
 
