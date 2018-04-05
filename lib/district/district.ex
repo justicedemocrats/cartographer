@@ -83,7 +83,6 @@ defmodule District do
     geojsons()
     |> Enum.filter(fn {_district, polygon} -> Topo.contains?(polygon, {lng, lat}) end)
     |> Enum.map(fn {district, _polygon} -> district end)
-    |> IO.inspect()
     |> List.first()
   end
 
