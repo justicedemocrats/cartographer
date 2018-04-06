@@ -31,7 +31,21 @@ defmodule Jobs.ProcessNewEvents do
     |> Enum.each(&sync_only_pipeline/1)
   end
 
-  def process_single_id(id) do
+  def process_single_full(id) do
+    events = [Ak.Api.get("event/#{id}").body]
+
+    events
+    |> Enum.map(&wrap_event/1)
+    |> Enum.filter(&is_not_from_sync/1)
+    |> Enum.each(&pipeline/1)
+
+    events
+    |> Enum.map(&wrap_event/1)
+    |> Enum.reject(&is_not_from_sync/1)
+    |> Enum.each(&sync_only_pipeline/1)
+  end
+
+  def process_single_pipeline(id) do
     Ak.Api.get("event/#{id}").body
     |> wrap_event()
     |> pipeline()
@@ -87,6 +101,7 @@ defmodule Jobs.ProcessNewEvents do
 
   def is_not_from_sync(~m(event)) do
     not (get_event_tags(event)
+         |> IO.inspect()
          |> Enum.member?("Source: Sync"))
   end
 
@@ -101,6 +116,7 @@ defmodule Jobs.ProcessNewEvents do
 
   def sync_only_pipeline(event) do
     event
+    |> ensure_attributes()
     |> add_local_organizer_tag()
   end
 
@@ -198,11 +214,11 @@ defmodule Jobs.ProcessNewEvents do
   end
 
   def get_event_tags(event) do
-    with string_val when is_binary(string_val) <- get_value_of_event_field(event, "event_tags"),
+    with string_val when is_binary(string_val) <- get_value_of_event_field(event, "tags"),
          {:ok, map} <- Poison.decode(string_val) do
       map
     else
-      _ -> get_value_of_event_field(event, "event_tags")
+      _ -> get_value_of_event_field(event, "tags")
     end
   end
 
