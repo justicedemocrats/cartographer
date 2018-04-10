@@ -19,9 +19,10 @@ defmodule Cartographer.Airtable do
     reference_name = fields["Reference Name"]
     candidate_events_url = fields["Candidate Events Url"]
     point_of_contact = fields["Point of Contact"]
+    sync_rsvps = fields["Sync RSVPs"]
 
     {slugify(reference_name),
-     ~m(osdi_api_token endpoint json_schema_filter reference_name candidate_events_url point_of_contact)}
+     ~m(osdi_api_token endpoint json_schema_filter reference_name candidate_events_url point_of_contact sync_rsvps)}
   end
 
   def slugify(reference_name) do

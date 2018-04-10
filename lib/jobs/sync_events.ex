@@ -17,7 +17,7 @@ defmodule Jobs.SyncEvents do
   def sync_candidate(candidate, schema \\ nil) do
     ~m(
       endpoint osdi_api_token json_schema_filter reference_name
-      candidate_events_url point_of_contact
+      candidate_events_url point_of_contact sync_rsvps
     ) = Cartographer.Airtable.get_all()[candidate]
 
     external_client = OsdiClient.build_client(endpoint, osdi_api_token)
@@ -35,6 +35,12 @@ defmodule Jobs.SyncEvents do
       |> Stream.reject(fn result -> match?({:error, _}, result) end)
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
+
+    if sync_rsvps do
+      spawn(fn ->
+        Enum.map(their_events_synced, &set_suppress_confirmation/1)
+      end)
+    end
 
     Logger.info("Synced #{length(their_events_synced)} events")
 
@@ -146,13 +152,16 @@ defmodule Jobs.SyncEvents do
   end
 
   def update_or_add(event) do
-    case find_id_of_event_with_external_id(event) do
-      nil ->
-        {:created, create_event(event)}
+    {status, event} =
+      case find_id_of_event_with_external_id(event) do
+        nil ->
+          {:created, create_event(event)}
 
-      id ->
-        {:updated, update_event(id, event)}
-    end
+        id ->
+          {:updated, update_event(id, event)}
+      end
+
+    {status, event}
   end
 
   def find_id_of_event_with_external_id(~m(identifiers)) do
@@ -239,5 +248,35 @@ defmodule Jobs.SyncEvents do
 
   def tags_for(event) do
     event["tags"] || []
+  end
+
+  def set_suppress_confirmation(~m(id)) do
+    found =
+      Ak.Api.stream(
+        "eventfield",
+        query: %{
+          "name" => "no_confirmation",
+          "event" => id
+        }
+      )
+      |> Enum.to_list()
+      |> List.first()
+
+    case found do
+      %{} ->
+        :ok
+
+      nil ->
+        Ak.Api.post(
+          "eventfield",
+          body: %{
+            "name" => "no_confirmation",
+            "event" => id,
+            "value" => 1
+          }
+        )
+
+        :ok
+    end
   end
 end
