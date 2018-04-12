@@ -100,9 +100,11 @@ defmodule Jobs.ProcessNewEvents do
   end
 
   def is_not_from_sync(~m(event)) do
-    not (get_event_tags(event)
-         |> IO.inspect()
-         |> Enum.member?("Source: Sync"))
+    case get_event_tags(event) do
+      nil -> false
+      tags when is_list(tags) -> Enum.member?(tags, "Source: Sync")
+      tags when is_binary(tags) -> Poison.decode!(tags) |> Enum.member?("Source: Sync")
+    end
   end
 
   def pipeline(event) do
@@ -218,7 +220,8 @@ defmodule Jobs.ProcessNewEvents do
          {:ok, map} <- Poison.decode(string_val) do
       map
     else
-      _ -> get_value_of_event_field(event, "tags")
+      _ ->
+        get_value_of_event_field(event, "tags") || get_value_of_event_field(event, "event_tags")
     end
   end
 
