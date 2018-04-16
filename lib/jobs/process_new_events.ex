@@ -101,9 +101,9 @@ defmodule Jobs.ProcessNewEvents do
 
   def is_not_from_sync(~m(event)) do
     case get_event_tags(event) do
-      nil -> false
-      tags when is_list(tags) -> Enum.member?(tags, "Source: Sync")
-      tags when is_binary(tags) -> Poison.decode!(tags) |> Enum.member?("Source: Sync")
+      nil -> true
+      tags when is_list(tags) -> not Enum.member?(tags, "Source: Sync")
+      tags when is_binary(tags) -> not (Poison.decode!(tags) |> Enum.member?("Source: Sync"))
     end
   end
 
