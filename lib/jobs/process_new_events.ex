@@ -221,7 +221,12 @@ defmodule Jobs.ProcessNewEvents do
       map
     else
       _ ->
-        get_value_of_event_field(event, "tags") || get_value_of_event_field(event, "event_tags")
+        case get_value_of_event_field(event, "tags") ||
+               get_value_of_event_field(event, "event_tags") do
+          tags when is_list(tags) -> tags
+          tags when is_binary(tags) -> Poison.decode!(tags)
+          nil -> []
+        end
     end
   end
 
