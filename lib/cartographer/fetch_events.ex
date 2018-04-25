@@ -34,7 +34,7 @@ defmodule Cartographer.FetchEvents do
     parse(e["end_date"], offset_utc)
   end
 
-  def add_date_line(event = ~m(start_date end_date)) do
+  def add_date_line(event) do
     date_line =
       humanize_date(event["start_date"]) <>
         "from " <>

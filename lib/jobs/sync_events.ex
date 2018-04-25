@@ -125,7 +125,17 @@ defmodule Jobs.SyncEvents do
   end
 
   def add_source_tags(event, reference_name) do
-    tags = Enum.concat(tags_for(event), ["Calendar: #{reference_name}", "Source: Sync"])
+    %{"metadata" => ~m(local_chapter_leader_list)} = Cosmic.get("jd-esm-config")
+    local_leader_emails = String.split(local_chapter_leader_list, "\n")
+
+    extra =
+      if get_in(event, ~w(contact email_address)) |> Enum.member?(local_leader_emails) do
+        ["Calendar: Local Chapter"]
+      else
+        []
+      end
+
+    tags = Enum.concat([tags_for(event), ["Calendar: #{reference_name}", "Source: Sync"], extra])
     Map.put(event, "tags", tags)
   end
 
