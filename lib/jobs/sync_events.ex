@@ -127,9 +127,10 @@ defmodule Jobs.SyncEvents do
   def add_source_tags(event, reference_name) do
     %{"metadata" => ~m(local_chapter_leader_list)} = Cosmic.get("jd-esm-config")
     local_leader_emails = String.split(local_chapter_leader_list, "\n")
+    email = get_in(event, ~w(contact email_address))
 
     extra =
-      if get_in(event, ~w(contact email_address)) |> Enum.member?(local_leader_emails) do
+      if Enum.member?(local_leader_emails, email) do
         ["Calendar: Local Chapter"]
       else
         []
