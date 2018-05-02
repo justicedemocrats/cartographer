@@ -11,7 +11,15 @@ defmodule Jobs.SyncEvents do
   def sync_all do
     Cartographer.Airtable.get_all()
     |> Map.keys()
-    |> Enum.map(&sync_candidate/1)
+    |> Enum.map(&try_sync_candidate/1)
+  end
+
+  def try_sync_candidate(candidate) do
+    try do
+      sync_candidate(candidate)
+    rescue
+      _ -> Logger.error("Could not sync #{candidate}")
+    end
   end
 
   def sync_candidate(candidate, schema \\ nil) do
