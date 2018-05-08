@@ -22,7 +22,8 @@ config :cosmic, slug: "brand-new-congress"
 config :cartographer, Cartographer.Scheduler,
   jobs: [
     {"*/5 * * * *", {Jobs.ProcessNewEvents, :go, []}},
-    {"0 */3 * * *", {Jobs.SyncEvents, :sync_all, []}},
+    {"0 */2 * * *", {Jobs.SyncEvents, :sync_all, []}},
+    {"30 */2 * * *", {Jobs.SyncAttendances, :sync_attendances_within, []}},
     {"*/3 * * * *", {Cartographer.EventCache, :update, []}},
     {"*/9 * * * *", {Cartographer.Airtable, :update, []}}
   ]

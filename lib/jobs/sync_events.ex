@@ -44,11 +44,11 @@ defmodule Jobs.SyncEvents do
       |> Stream.map(fn notice -> notify(notice, candidate_events_url, point_of_contact) end)
       |> Enum.to_list()
 
-    # if sync_rsvps do
-    #   spawn(fn ->
-    #     Enum.map(their_events_synced, &set_suppress_confirmation/1)
-    #   end)
-    # end
+    if sync_rsvps do
+      spawn(fn ->
+        Enum.map(their_events_synced, &set_suppress_confirmation/1)
+      end)
+    end
 
     Logger.info("Synced #{length(their_events_synced)} events")
 
