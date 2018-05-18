@@ -1,6 +1,7 @@
 defmodule Cartographer.Endpoint do
   use Phoenix.Endpoint, otp_app: :cartographer
 
+  plug(CORSPlug)
   socket("/socket", Cartographer.UserSocket)
 
   # Serve at "/" the static files from "priv/static" directory.

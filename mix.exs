@@ -51,7 +51,8 @@ defmodule Cartographer.Mixfile do
       {:maps, git: "https://github.com/justicedemocrats/maps_ex.git"},
       {:geo, "~> 1.5"},
       {:topo, "~> 0.1.0"},
-      {:stash, "~> 1.0.0"}
+      {:stash, "~> 1.0.0"},
+      {:cors_plug, "~> 1.5"}
     ]
   end
 end
