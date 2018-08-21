@@ -36,7 +36,7 @@ defmodule Cartographer.FetchEvents do
 
   def add_date_line(event) do
     date_line =
-      humanize_date(event["start_date"]) <>
+      humanize_date(event["start_date"], get_in(event, ~w(location time_zone))) <>
         "from " <>
         humanize_time(event["start_date"], get_in(event, ~w(location time_zone))) <>
         " - " <> humanize_time(event["end_date"], get_in(event, ~w(location time_zone)))
@@ -44,8 +44,9 @@ defmodule Cartographer.FetchEvents do
     Map.put(event, "date_line", date_line)
   end
 
-  defp humanize_date(dt) do
-    %DateTime{month: month, day: day} = parse(dt)
+  defp humanize_date(dt, tz) do
+    zone = Timex.Timezone.get(tz)
+    %DateTime{month: month, day: day} = parse(dt) |> Timex.Timezone.convert(zone)
 
     month =
       [
